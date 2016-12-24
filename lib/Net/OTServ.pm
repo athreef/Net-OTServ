@@ -7,6 +7,7 @@ package Net::OTServ;
 
 use Carp;
 use IO::Socket;
+use IO::Socket::Timeout;
 use XML::Hash::XS;
 
 =pod
@@ -28,7 +29,7 @@ Net::OTServ - Retrieve status information about Open Tibia Servers
 
 =head1 DESCRIPTION
 
-    Open Tibia servers offer a XML interface to query online count, client version and other information.
+Open Tibia servers offer a XML interface to query online count, client version and other information.
 
 =head1 METHODS AND ARGUMENTS
 
@@ -36,7 +37,7 @@ Net::OTServ - Retrieve status information about Open Tibia Servers
 
 =item status($ip [, $port])
 
-Retrieves the status of specified OTServ as a hash reference. If C<$ip> is omitted, the default 7171 is assumed.
+Retrieves the status of specified OTServ as a hash reference. If C<$port> is omitted, the default 7171 is assumed.
 
 =cut
 
@@ -47,16 +48,19 @@ sub status {
     my $ot = IO::Socket::INET->new(
         PeerAddr => $ip,
         PeerPort => $port,
-        Proto    => 'tcp'
-    );
-    $ot->setsockopt(SOL_SOCKET, SO_RCVTIMEO, pack('l!l!', 5, 0));
+        Proto    => 'tcp',
+        Timeout  => 1,
+    ) or croak "OTServ at $ip:$port is offline.";
 
     $ot->write("\x06\x00\xFF\xFF\x69\x6E\x66\x6F");
     my $xml; $ot->recv($xml,1024);
-    my $status = xml2hash $xml;
+    $xml or croak "Server at $ip:$port doesn't reply.";
+    my $status; eval { $status = xml2hash $xml };
+    $status and !$@
+        or croak "Server at $ip:$port doesn't reply in XML.";
 
     
-	return $status;
+    return $status;
 }
 
 
