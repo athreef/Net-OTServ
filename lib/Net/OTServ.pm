@@ -44,16 +44,20 @@ Retrieves the status of specified OTServ as a hash reference. If C<$port> is omi
 sub status {
     my $ip = shift;
     my $port = shift || 7171;
+    my $timeout = 1;
 
     my $ot = IO::Socket::INET->new(
         PeerAddr => $ip,
         PeerPort => $port,
         Proto    => 'tcp',
-        Timeout  => 1,
+        Timeout  => $timeout, # connection timeout
     ) or croak "OTServ at $ip:$port is offline.";
+    IO::Socket::Timeout->enable_timeouts_on($ot);
+    $ot->read_timeout($timeout);
+    $ot->write_timeout($timeout);
 
     $ot->write("\x06\x00\xFF\xFF\x69\x6E\x66\x6F");
-    my $xml; $ot->recv($xml,1024);
+    my $xml; $ot->recv($xml, 1024);
     $xml or croak "Server at $ip:$port doesn't reply.";
     my $status; eval { $status = xml2hash $xml };
     $status and !$@
