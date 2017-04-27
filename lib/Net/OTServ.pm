@@ -57,7 +57,7 @@ sub status {
     $ot->write_timeout($timeout);
 
     $ot->write("\x06\x00\xFF\xFF\x69\x6E\x66\x6F");
-    my $xml; $ot->recv($xml, 1024);
+    my $xml; $ot->recv($xml, 1500);
     $xml or croak "Server at $ip:$port doesn't reply.";
     my $status; eval { $status = xml2hash $xml };
     $status and !$@
@@ -90,7 +90,7 @@ Ahmad Fatoum C<< <athreef@cpan.org> >>, L<http://a3f.at>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2016 Ahmad Fatoum
+Copyright (C) 2017 Ahmad Fatoum
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
